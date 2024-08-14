@@ -1,0 +1,1 @@
+export const TESTTIME = 60;
