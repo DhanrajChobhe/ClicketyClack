@@ -62,11 +62,11 @@ export function getRandomWord() : string {
   return word;
 }
 export function getRandomList(size:number) : string[] {
-  const wordSet = new Set<string>();
+  const wordList = []
 
-  while (wordSet.size < size) {
-    wordSet.add(getRandomWord());
+  while (wordList.length < size) {
+    wordList.push(getRandomWord());
   }
 
-  return Array.from(wordSet);
+  return wordList;
 }

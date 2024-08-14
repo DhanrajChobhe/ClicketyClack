@@ -1,14 +1,14 @@
 import React from "react";
 
-import { Amatic_SC } from "next/font/google";
+import { Fredoka } from "next/font/google";
 
-const amatic = Amatic_SC({ weight: "700", subsets: ["latin"] });
+const fredoka = Fredoka({ weight: "400", subsets: ["latin"] });
 
 function Header() {
   return (
-    <header>
-      <nav>
-        <span className={amatic.className + " text-4xl"}>ClicketyClack</span>
+    <header className="flex justify-center w-full">
+      <nav className="flex justify-center bg-red-400 lg:w-[70%] w-[90%]">
+        <h1 className={fredoka.className + " text-4xl p-2"}>ClicketyClack</h1>
       </nav>
     </header>
   );
