@@ -1,10 +1,9 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useReducer } from "react";
 import Timer from "./timer";
 import Word from "./word";
 import { TESTTIME } from "@/utils/constants";
 import { Fredoka } from "next/font/google";
-import { motion, AnimatePresence } from "framer-motion";
 
 const fredoka = Fredoka({ weight: "400", style: "normal", subsets: ["latin"] });
 //"h-auto text-3xl flex gap-2 flex-wrap"
@@ -13,74 +12,140 @@ interface TestProps {
   wordList: string[];
 }
 
+const initialState = {
+  WORDS: [],
+  activeWord: 0,
+  timeLeft: TESTTIME,
+  timeUp: false,
+  inputValue: "",
+  typedLetters: [],
+  startTime: null,
+  stats: {
+    grossWpm: null,
+    netWpm: null,
+    accuracy: null,
+    incorrectCharacters: null,
+    correctCharacters: null,
+    totalCharacters: null,
+  },
+};
+
+const ACTIONS = {
+  UPDATE_WORDS: "UPDATE_WORDS",
+  SET_ACTIVE_WORD: "SET_ACTIVE_WORD",
+  DECREMENT_TIME: "DECREMENT_TIME",
+  SET_TIME_UP: "SET_TIME_UP",
+  UPDATE_INPUT_VALUE: "UPDATE_INPUT_VALUE",
+  UPDATE_TYPED_LETTERS: "UPDATE_TYPED_LETTERS",
+  SET_START_TIME: "SET_START_TIME",
+  UPDATE_STATS: "UPDATE_STATS",
+};
+
+const reducer = (state: any, action: any) => {
+  switch (action.type) {
+    case ACTIONS.UPDATE_WORDS:
+      return { ...state, WORDS: action.payload };
+    case ACTIONS.SET_ACTIVE_WORD:
+      return { ...state, activeWord: action.payload };
+    case ACTIONS.DECREMENT_TIME:
+      return { ...state, timeLeft: state.timeLeft - 1 };
+    case ACTIONS.SET_TIME_UP:
+      return { ...state, timeUp: true };
+    case ACTIONS.UPDATE_INPUT_VALUE:
+      return { ...state, inputValue: action.payload };
+    case ACTIONS.UPDATE_TYPED_LETTERS:
+      return { ...state, typedLetters: action.payload };
+    case ACTIONS.SET_START_TIME:
+      return { ...state, startTime: action.payload };
+    case ACTIONS.UPDATE_STATS:
+      return { ...state, stats: action.payload };
+    default:
+      return state;
+  }
+};
+
 export function Test({ wordList }: TestProps) {
   const wordlistRef = useRef<string[]>(wordList);
-  const [WORDS, setWORDS] = useState(wordlistRef.current.slice(0, 50));
-  const [activeWord, setActiveWord] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(TESTTIME);
-  const [timeUp, setTimeUp] = useState(false);
-  const [inputValue, setInputValue] = useState("");
-  const [typedLetters, setTypedLetters] = useState(
-    new Array<string>(wordList.length).fill("")
-  );
-  const [startTime, setStartTime] = useState<number | null>(null);
-  const [grossWpm, setGrossWpm] = useState<number | null>(null);
-  const [netWpm, setNetWpm] = useState<number | null>(null);
-  const [accuracy, setAccuracy] = useState<number | null>(null);
-  const [incorrectCharacters, setIncorrectCharacters] = useState<number | null>(
-    null
-  );
-  const [correctCharacters, setCorrectCharacters] = useState<number | null>(
-    null
-  );
-  const [totalCharacters, setTotalCharacters] = useState<number | null>(null);
+  const [state, dispatch] = useReducer(reducer, {
+    ...initialState,
+    WORDS: wordlistRef.current.slice(0, 50),
+  });
+  const {
+    WORDS,
+    activeWord,
+    timeLeft,
+    timeUp,
+    inputValue,
+    typedLetters,
+    startTime,
+    stats,
+  } = state;
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setInputValue(event.target.value);
+    dispatch({ type: ACTIONS.UPDATE_INPUT_VALUE, payload: event.target.value });
   };
 
   const handleKeyDown = (event: React.KeyboardEvent) => {
     if (/^[a-z\s]$/.test(event.key)) {
       if (inputValue && event.key === " ") {
-        setActiveWord((aw) => aw + 1);
-        if (WORDS.length - 5 === activeWord && activeWord !== 0) {
-          setWORDS((prevWORDS) =>
-            wordlistRef.current.slice(0, prevWORDS.length + 10)
-          );
-        }
-        setTypedLetters((prevTypedLetters) => {
-          prevTypedLetters[activeWord] = inputValue;
-          return prevTypedLetters;
+        // Advance active word if necessary
+        dispatch({ type: ACTIONS.SET_ACTIVE_WORD, payload: activeWord + 1 });
+
+        // Update typed letters for current word
+        let newTypedLetters = [...typedLetters];
+        newTypedLetters[activeWord] = inputValue;
+        dispatch({
+          type: ACTIONS.UPDATE_TYPED_LETTERS,
+          payload: newTypedLetters,
         });
-        setInputValue("");
+
+        // Load more words if needed
+        if (WORDS.length - 5 === activeWord && activeWord !== 0) {
+          dispatch({
+            type: ACTIONS.UPDATE_WORDS,
+            payload: wordlistRef.current.slice(0, WORDS.length + 10),
+          });
+        }
+
+        // Reset input value
+        dispatch({ type: ACTIONS.UPDATE_INPUT_VALUE, payload: "" });
+
         event.preventDefault();
       } else if (!inputValue && event.key === " ") {
         event.preventDefault();
-      }
-      if (!timerRef.current && event.key !== " ") {
-        setStartTime(Date.now());
+      } else if (!timerRef.current && event.key !== " ") {
+        dispatch({ type: ACTIONS.SET_START_TIME, payload: Date.now() });
       }
     } else if (
       event.key === "Backspace" &&
       inputValue === "" &&
       activeWord !== 0
     ) {
-      setActiveWord((aw) => aw - 1);
-      setInputValue(typedLetters[activeWord - 1]);
-      setTypedLetters((prevTypedLetters) => {
-        prevTypedLetters[activeWord] = "";
-        return prevTypedLetters;
+      const newTypedLetters = [...typedLetters];
+      dispatch({ type: ACTIONS.SET_ACTIVE_WORD, payload: activeWord - 1 });
+
+      dispatch({
+        type: ACTIONS.UPDATE_INPUT_VALUE,
+        payload: newTypedLetters[activeWord - 1],
+      });
+
+      // Handle backspace logic for previous word
+      newTypedLetters[activeWord] = "";
+      dispatch({
+        type: ACTIONS.UPDATE_TYPED_LETTERS,
+        payload: newTypedLetters,
       });
       event.preventDefault();
     }
   };
+
   const handleFocus = (event: React.MouseEvent) => {
     inputRef.current?.focus();
   };
 
-  let wordRenderList = WORDS.map((word, index) => {
+  let wordRenderList = WORDS.map((word: string, index: number) => {
     const currentTypedLetters = typedLetters[index];
 
     if (index == activeWord) {
@@ -105,9 +170,9 @@ export function Test({ wordList }: TestProps) {
     if (startTime) {
       timerRef.current = setInterval(() => {
         if (timeLeft > 0) {
-          setTimeLeft((prevTime) => prevTime - 1);
+          dispatch({ type: ACTIONS.DECREMENT_TIME });
         } else {
-          setTimeUp(true);
+          dispatch({ type: ACTIONS.SET_TIME_UP });
           if (timerRef.current) clearInterval(timerRef.current);
         }
       }, 1000);
@@ -116,15 +181,17 @@ export function Test({ wordList }: TestProps) {
         if (timerRef.current) clearInterval(timerRef.current);
       };
     }
-  }, [startTime, timeLeft]);
+  }, [startTime, timeLeft, dispatch]);
 
   useEffect(() => {
     if (timeUp) {
       const endTime = Date.now();
       const totalTimeInSeconds = (endTime - startTime!) / 1000;
       const totalCharacters =
-        typedLetters.reduce((acc, curr) => acc + curr.length, 0) +
-        typedLetters.filter((letter) => letter !== "").length;
+        typedLetters.reduce(
+          (acc: number, curr: string) => acc + curr.length,
+          0
+        ) + typedLetters.filter((letter: string) => letter !== "").length;
 
       let correctCharacters = 0;
       let incorrectCharacters = 0;
@@ -141,6 +208,7 @@ export function Test({ wordList }: TestProps) {
               incorrectCharacters++;
             }
           }
+          correctCharacters++;
         }
       }
 
@@ -153,30 +221,34 @@ export function Test({ wordList }: TestProps) {
       );
       const accuracy = Math.round((correctCharacters / totalCharacters) * 100);
 
-      setGrossWpm(grossWpm);
-      setNetWpm(netWpm);
-      setAccuracy(accuracy);
-      setIncorrectCharacters(incorrectCharacters);
-      setCorrectCharacters(correctCharacters);
-      setTotalCharacters(totalCharacters);
+      const calculatedStats = {
+        grossWpm,
+        netWpm,
+        accuracy,
+        incorrectCharacters,
+        correctCharacters,
+        totalCharacters,
+      };
+
+      dispatch({ type: ACTIONS.UPDATE_STATS, payload: calculatedStats });
     }
 
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [timeUp, startTime]);
+  }, [timeUp, startTime, dispatch]);
 
   return (
     <div className="flex h-full lg:w-[70%] w-[90%] justify-center items-center flex-col text-8xl text-gray-700/30">
       {timeUp ? (
         <div className="text-2xl text-fuchsia-950">
           <p>Time's up!</p>
-          <p>Raw WPM: {grossWpm}</p>
-          <p>WPM: {netWpm}</p>
-          <p>Accuracy: {accuracy}%</p>
+          <p>Raw WPM: {state.stats.grossWpm}</p>
+          <p>WPM: {state.stats.netWpm}</p>
+          <p>Accuracy: {state.stats.accuracy}%</p>
           <p>
-            Characters: {incorrectCharacters} | {correctCharacters} |{" "}
-            {totalCharacters}
+            Characters: {state.stats.incorrectCharacters} |{" "}
+            {state.stats.correctCharacters} | {state.stats.totalCharacters}
           </p>
         </div>
       ) : (

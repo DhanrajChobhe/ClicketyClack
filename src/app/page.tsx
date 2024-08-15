@@ -1,5 +1,4 @@
 "use client";
-import { getRandomList } from "@/utils/words";
 import { useRouter } from "next/navigation";
 
 //colours :  "bg-red-500","bg-pink-700","bg-pink-800","bg-fuchsia-950"

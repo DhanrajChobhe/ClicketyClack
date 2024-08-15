@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, memo } from "react";
+import React, { memo } from "react";
 import { Archivo_Narrow } from "next/font/google";
 import { TESTTIME } from "@/utils/constants";
 
@@ -10,7 +10,6 @@ const archivo = Archivo_Narrow({
 });
 
 function Timer({ timeLeft }: { timeLeft: number }) {
-  console.log("rerendering timer " + timeLeft);
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
 

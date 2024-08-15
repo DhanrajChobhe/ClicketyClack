@@ -1,4 +1,3 @@
-import { Span } from "next/dist/trace";
 import { memo } from "react";
 
 interface WordProps {
@@ -42,6 +41,17 @@ function Word({ active, word, lettersTyped }: WordProps) {
       );
     }
   });
+  if (lettersTyped && typedLength > word.length) {
+    let i = word.length;
+    while (i < typedLength) {
+      letterList.push(
+        <span className="text-red-600" key={lettersTyped[i] + i}>
+          {lettersTyped[i]}
+        </span>
+      );
+      i++;
+    }
+  }
 
   return <div className="text-gray-700/50">{letterList}</div>;
 }
