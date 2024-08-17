@@ -1,12 +1,18 @@
 import { Test } from "@/components/test";
 import { getRandomList } from "@/utils/words";
 
-export default function TestPage() {
-  console.log("rerendering test page!!");
+interface TestPageParams {
+  searchParams?: {
+    time: number;
+  };
+}
+
+export default function TestPage({ searchParams }: TestPageParams) {
+  const { time } = searchParams ?? { time: 60 };
   let wordList = getRandomList(500);
   return (
     <main className="h-full flex justify-center">
-      <Test wordList={wordList} />
+      <Test wordList={wordList} testTime={time} />
     </main>
   );
 }

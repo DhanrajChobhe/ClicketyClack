@@ -10,6 +10,7 @@ const fredoka = Fredoka({ weight: "400", style: "normal", subsets: ["latin"] });
 
 interface TestProps {
   wordList: string[];
+  testTime: number;
 }
 
 const initialState = {
@@ -64,11 +65,12 @@ const reducer = (state: any, action: any) => {
   }
 };
 
-export function Test({ wordList }: TestProps) {
+export function Test({ wordList, testTime }: TestProps) {
   const wordlistRef = useRef<string[]>(wordList);
   const [state, dispatch] = useReducer(reducer, {
     ...initialState,
     WORDS: wordlistRef.current.slice(0, 50),
+    timeLeft: testTime,
   });
   const {
     WORDS,
@@ -84,7 +86,10 @@ export function Test({ wordList }: TestProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    dispatch({ type: ACTIONS.UPDATE_INPUT_VALUE, payload: event.target.value });
+    dispatch({
+      type: ACTIONS.UPDATE_INPUT_VALUE,
+      payload: event.target.value,
+    });
   };
 
   const handleKeyDown = (event: React.KeyboardEvent) => {
@@ -241,19 +246,19 @@ export function Test({ wordList }: TestProps) {
   return (
     <div className="flex h-full lg:w-[70%] w-[90%] justify-center items-center flex-col text-8xl text-gray-700/30">
       {timeUp ? (
-        <div className="text-2xl text-fuchsia-950">
+        <div className="mt-10 text-2xl text-fuchsia-950">
           <p>Time's up!</p>
-          <p>Raw WPM: {state.stats.grossWpm}</p>
           <p>WPM: {state.stats.netWpm}</p>
+          <p>Raw WPM: {state.stats.grossWpm}</p>
           <p>Accuracy: {state.stats.accuracy}%</p>
           <p>
-            Characters: {state.stats.incorrectCharacters} |{" "}
-            {state.stats.correctCharacters} | {state.stats.totalCharacters}
+            Characters: {"incorrect : " + state.stats.incorrectCharacters} |{" "}
+            {"correct : " + state.stats.correctCharacters}
           </p>
         </div>
       ) : (
         <>
-          <Timer timeLeft={timeLeft} />
+          <Timer timeLeft={timeLeft} testTime={testTime} />
           <div
             className="bg-red-300 border-zinc-950 h-full"
             onClick={handleFocus}
@@ -273,6 +278,7 @@ export function Test({ wordList }: TestProps) {
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             className="text-base p-2 opacity-0"
+            maxLength={15}
           />
           {/* <p className="text-base">Input value: {inputValue}</p> */}
         </>

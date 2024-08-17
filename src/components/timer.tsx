@@ -4,12 +4,17 @@ import { Archivo_Narrow } from "next/font/google";
 import { TESTTIME } from "@/utils/constants";
 
 const archivo = Archivo_Narrow({
-  weight: "400",
+  weight: "500",
   subsets: ["latin"],
   style: "normal",
 });
 
-function Timer({ timeLeft }: { timeLeft: number }) {
+interface TimerProps {
+  timeLeft: number;
+  testTime: number;
+}
+
+function Timer({ timeLeft, testTime }: TimerProps) {
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
 
@@ -20,7 +25,7 @@ function Timer({ timeLeft }: { timeLeft: number }) {
           .padStart(2, "0")}`
       : seconds;
 
-  let percentage = (timeLeft / TESTTIME) * 100;
+  let percentage = (timeLeft / testTime) * 100;
 
   return (
     <>
