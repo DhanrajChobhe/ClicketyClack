@@ -75,7 +75,7 @@ function scrollingWords() {
           key={word + index}
         />
       );
-    } else if (index > activeLetter) {
+    } else if (index > activeWord) {
       return (
         <WORD word={word} typed={false} active={false} key={word + index} />
       );
